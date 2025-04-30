@@ -79,6 +79,7 @@ do
 
 for T in 0.03 0.05 0.1
 do
+    echo "Value of T: $T"
     export T=$T
     
     mkdir -p $train_dir
@@ -86,11 +87,11 @@ do
 
     if [[ $ACTION_NAME == 'submit' ]]; then
         ## Use this line to submit the experiment to the batch scheduler
-        sbatch < ./do_experiment.slurm
+        sbatch < $ROOT_DIR/runs/SAMIL/do_experiment.slurm
 
     elif [[ $ACTION_NAME == 'run_here' ]]; then
         ## Use this line to just run interactively
-        bash ./do_experiment.slurm
+        bash $ROOT_DIR/runs/SAMIL/do_experiment.slurm
     fi
 
 

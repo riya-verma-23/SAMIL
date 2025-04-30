@@ -30,7 +30,7 @@ from src.SAMIL.libml.randaugment import RandAugmentMC
 
 logger = logging.getLogger(__name__)
 
-
+print('Running parser')
 # Training settings
 parser = argparse.ArgumentParser()
 
@@ -708,6 +708,8 @@ def main(args, brief_summary):
     
             
 if __name__=='__main__':
+
+    print('Running main.py')
     
     args = parser.parse_args()
     

@@ -2,6 +2,9 @@
 
 # Pass along all ENV variables as arguments to my Python script
 export PYTHONPATH="${PYTHONPATH}:$ROOT_DIR"
+
+echo "Starting experiment..."
+
 python -m $script \
     --patience $patience\
     --use_data_normalization $use_data_normalization\
