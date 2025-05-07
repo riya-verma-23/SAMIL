@@ -8,7 +8,7 @@ We needed to perform additional structuring on the data set in the released TMED
 ### Prepare datasets
 The AS diagnosis task in this study uses the view_and_diagnosis_labeled_set from TMED2 
 - Step1. Download TMED2, please visit https://TMED.cs.tufts.edu and follow the instruction.
-- Step2. Run ``` bash organize_tmed2.sh <labeled_dir> <unlabeled_dir> <output_dir>``` on downloaded view_and_diagnosis_labeled_set folder
+- Step2. Run ```bash organize_tmed2.sh <labeled_dir> <unlabeled_dir> <output_dir>``` on downloaded view_and_diagnosis_labeled_set folder
 
 ### Environment
 The original authors used pytorch 1.11.0 but we found it difficult to download this dependency.
@@ -17,14 +17,14 @@ We used Google Colab Pro to run our experiments on T4 GPU.
 
 We installed the following dependencies along with Python 3.11.11.
 
-``` !pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 torchaudio==2.0.2 -f https://download.pytorch.org/whl/torch_stable.html ``` 
+```pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 torchaudio==2.0.2 -f https://download.pytorch.org/whl/torch_stable.html ``` 
 
 
 # Running experiments locally
-Run ``` bash setup.sh ``` to set the environmental variables and run the SAMIL experiment locally.
+Run ```bash setup.sh ``` to set the environmental variables and run the SAMIL experiment locally.
 
 # Running experiments on Google Colab Pro
-Use [final_results/original_samil_results/original_samil.ipynb](original_samil.ipynb) to run the experiment on SAMIL model in the research paper.
+Use [original_samil.ipynb](final_results/original_samil_results/original_samil.ipynb) to run the experiment on SAMIL model in the research paper.
 
 # Results
 We ran two full model runs. The [original_samil.ipynb](final_results/original_samil_results/original_samil.ipynb) runs the SAMIL model defined in the paper. The [modified_samil.ipynb](final_results/modified_samil_results/modified_samil.ipynb) runs SAMIL with added drop out layers. 
@@ -47,7 +47,7 @@ Please see [Hyperparameters/](Hyperparameters) for reference. You can also tried
 
 ### Example
 Running SAMIL with study-level pretraining, go to [runs/SAMIL](runs/SAMIL)
-``` bash launch_experiment.sh run_here ``` or use the custom ```setup.sh``` script provided
+```bash launch_experiment.sh run_here``` or use the custom ```setup.sh``` script provided
 
 ### A note on reproducibility
 While the focus of our paper is reproducibility, ultimately exact comparison to the results in our paper will be conflated by subtle differences such as the version of Pytorch etc (see https://pytorch.org/docs/stable/notes/randomness.html for more detail).
