@@ -2,6 +2,11 @@
 ### Objective
 We forked the SAMIL repository in an attempt to reproduce the changes from the paper Detecting Heart Disease from Multi-View Ultrasound Images via Supervised Attention Multiple Instance Learning (MLHC'23) for CS 598 Deep Learning for Healthcare. 
 
+### Video Presentation
+You must be signed in to @illinois.edu email to access the video presentation. 
+
+Video Presentation: https://drive.google.com/file/d/1lycdkACwjLFaOlaAyUtQtwoldYHbg9gS/view?usp=sharing
+
 # Setup
 We needed to perform additional structuring on the data set in the released TMED2. We added a script to organize the data and added changes to Echo_data.py to process the bags of images. We put the labeled and unlabeled images for the same study under same folder.
 
