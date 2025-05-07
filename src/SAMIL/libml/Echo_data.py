@@ -20,7 +20,7 @@ DiagnosisStr_to_Int_Mapping={
 
 
 #####################DS1      
-class EchoDataset(Dataset):
+class OriginalEchoDataset(Dataset):
     '''
     Echo_MIL raw data is structured exactly the same as TMED2Release, and has exactly the same tiff records, except including an additional part: diagnosis_labeled/
     
@@ -189,3 +189,132 @@ class EchoDataset(Dataset):
         
         return bag_image, DiagnosisLabel
 
+class EchoDataset(Dataset):
+    '''
+        Modified to work with the organized_tmed2 directory where images are already organized by study folders
+    '''
+
+    def __init__(self, PatientStudy_list, TMED2SummaryTable, ML_DATA_dir, sampling_strategy='all', training_seed=0, transform_fn=None):
+
+        self.PatientStudy_list = PatientStudy_list
+        self.TMED2SummaryTable = TMED2SummaryTable
+
+        # Update this path to point to your organized data
+        self.ML_DATA_dir = ML_DATA_dir  # Should be set to '/content/organized_tmed2'
+        self.data_root_dir = os.path.join(self.ML_DATA_dir)
+        print(self.data_root_dir)
+
+        self.sampling_strategy = sampling_strategy
+        self.training_seed = training_seed
+        self.transform_fn = transform_fn
+
+        self.bag_of_PatientStudy_images, self.bag_of_PatientStudy_DiagnosisLabels = self._create_bags()
+
+    def _create_bags(self):
+
+        bag_of_PatientStudy_images = []
+        bag_of_PatientStudy_DiagnosisLabels = []
+
+        print("Number of patient studies: ", len(self.PatientStudy_list))
+
+        for PatientStudy in self.PatientStudy_list:
+            this_PatientStudy_dir = os.path.join(self.data_root_dir, PatientStudy)
+
+            # Get diagnosis label for this PatientStudy
+            this_PatientStudyRecords_from_TMED2SummaryTable = self.TMED2SummaryTable[self.TMED2SummaryTable['patient_study']==PatientStudy]
+            assert this_PatientStudyRecords_from_TMED2SummaryTable.shape[0]!=0, f'PatientStudy {PatientStudy} not found in TMED2SummaryTable'
+
+            this_PatientStudyRecords_from_TMED2SummaryTable_DiagnosisLabel = list(set(this_PatientStudyRecords_from_TMED2SummaryTable.diagnosis_label.values))
+            assert len(this_PatientStudyRecords_from_TMED2SummaryTable_DiagnosisLabel)==1, f'PatientStudy {PatientStudy} has multiple_PatientStudy_DiagnosisLabel'
+
+            this_PatientStudy_DiagnosisLabel = this_PatientStudyRecords_from_TMED2SummaryTable_DiagnosisLabel[0]
+            this_PatientStudy_DiagnosisLabel = DiagnosisStr_to_Int_Mapping[this_PatientStudy_DiagnosisLabel]
+
+            all_images_this_PatientStudy = [i for i in os.listdir(this_PatientStudy_dir)
+                                           if i.endswith('.png') and '.ipynb_checkpoints' not in i and '.DS_Store' != i]
+            # print(f"PatientStudy: {PatientStudy} has {len(all_images_this_PatientStudy)} images")
+            # Ensure consistent order
+            all_images_this_PatientStudy.sort()
+
+            ## ALWAYS USEW THIS FIRST_FRAME STRATEGY _ MAYBE CHANGE THIS LATER?
+            if self.sampling_strategy == 'first_frame':
+                bag_of_PatientStudy_DiagnosisLabels.append(this_PatientStudy_DiagnosisLabel)
+
+                this_PatientStudy_images = []
+
+                for image_filename in all_images_this_PatientStudy:
+                    image_path = os.path.join(this_PatientStudy_dir, image_filename)
+
+                    assert Image.open(image_path).mode != 'RGB'
+                    # Load the image directly using PIL
+                    img = np.array(Image.open(image_path))
+
+                    img = img[:, :, None]
+                    img = img[:, :, (0, 0, 0)]
+                    assert img.shape == (112, 112, 3), "Image [{}]'s size [{}] != [(112, 112, 3)]".format(image_filename, img.shape)
+
+                    this_PatientStudy_images.append(img)
+
+                this_PatientStudy_images = np.array(this_PatientStudy_images)
+                if (len(this_PatientStudy_images) == 0):
+                    print("PatientStudy_images len is 0 for PatientStudy with Patient Directory", PatientStudy, this_PatientStudy_dir)
+
+                bag_of_PatientStudy_images.append(this_PatientStudy_images)
+
+            elif self.sampling_strategy == 'subset':
+                # Sample a subset of images if there are too many
+                bag_of_PatientStudy_DiagnosisLabels.append(this_PatientStudy_DiagnosisLabel)
+
+                # If there are more than 20 images, randomly sample 20
+                if len(all_images_this_PatientStudy) > 20:
+                    random.seed(self.training_seed)
+                    selected_images = random.sample(all_images_this_PatientStudy, 20)
+                else:
+                    selected_images = all_images_this_PatientStudy
+
+                this_PatientStudy_images = []
+
+                for image_filename in selected_images:
+                    image_path = os.path.join(this_PatientStudy_dir, image_filename)
+                    img = np.array(Image.open(image_path))
+                    this_PatientStudy_images.append(img)
+
+                this_PatientStudy_images = np.array(this_PatientStudy_images)
+                bag_of_PatientStudy_images.append(this_PatientStudy_images)
+
+            else:
+                # Sample multiple times to create multiple bags
+                for i in range(int(self.sampling_strategy)):
+                    bag_of_PatientStudy_DiagnosisLabels.append(this_PatientStudy_DiagnosisLabel)
+
+                    # Randomly sample images for each bag
+                    random.seed(self.training_seed + i)  # Different seed for each bag
+
+                    # Sample min(10, total_images) images for each bag
+                    num_to_sample = min(10, len(all_images_this_PatientStudy))
+                    selected_images = random.sample(all_images_this_PatientStudy, num_to_sample)
+
+                    this_PatientStudy_images = []
+
+                    for image_filename in selected_images:
+                        image_path = os.path.join(this_PatientStudy_dir, image_filename)
+                        img = np.array(Image.open(image_path))
+                        this_PatientStudy_images.append(img)
+
+                    this_PatientStudy_images = np.array(this_PatientStudy_images)
+                    bag_of_PatientStudy_images.append(this_PatientStudy_images)
+
+        return bag_of_PatientStudy_images, bag_of_PatientStudy_DiagnosisLabels
+
+    def __len__(self):
+        return len(self.bag_of_PatientStudy_images)
+
+    def __getitem__(self, index):
+        bag_image = self.bag_of_PatientStudy_images[index]
+        assert len(bag_image) != 0, f"bag_image is empty for index {index}"
+
+        if self.transform_fn is not None:
+            bag_image = torch.stack([self.transform_fn(Image.fromarray(image)) for image in bag_image])
+
+        DiagnosisLabel = self.bag_of_PatientStudy_DiagnosisLabels[index]
+        return bag_image, DiagnosisLabel
